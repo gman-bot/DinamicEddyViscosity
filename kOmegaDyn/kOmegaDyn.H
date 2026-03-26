@@ -103,6 +103,7 @@ protected:
         PtrList<volVectorField> UPrev_;
         PtrList<volScalarField> kPrev_;
         PtrList<volScalarField> omegaPrev_;
+        PtrList<volSymmTensorField> SPrev_; // Added line
         PtrList<volVectorField> Uprint_;
         PtrList<volScalarField> kprint_;
         PtrList<volScalarField> omegaprint_;

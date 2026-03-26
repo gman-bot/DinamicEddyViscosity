@@ -28,14 +28,10 @@ License
 #include "fvConstraints.H"
 #include "bound.H"
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 namespace Foam
 {
 namespace RASModels
 {
-
-// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
 template<class BasicMomentumTransportModel>
 void kOmegaDyn<BasicMomentumTransportModel>::correctNut()
@@ -49,11 +45,7 @@ template<class BasicMomentumTransportModel>
 tmp<fvScalarMatrix> kOmegaDyn<BasicMomentumTransportModel>::kSource() const
 {
     return tmp<fvScalarMatrix>(
-        new fvScalarMatrix
-        (
-            k_,
-            dimVolume*this->rho_.dimensions()*k_.dimensions()/dimTime
-        )
+        new fvScalarMatrix(k_, dimVolume*this->rho_.dimensions()*k_.dimensions()/dimTime)
     );
 }
 
@@ -61,15 +53,9 @@ template<class BasicMomentumTransportModel>
 tmp<fvScalarMatrix> kOmegaDyn<BasicMomentumTransportModel>::omegaSource() const
 {
     return tmp<fvScalarMatrix>(
-        new fvScalarMatrix
-        (
-            omega_,
-            dimVolume*this->rho_.dimensions()*omega_.dimensions()/dimTime
-        )
+        new fvScalarMatrix(omega_, dimVolume*this->rho_.dimensions()*omega_.dimensions()/dimTime)
     );
 }
-
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 template<class BasicMomentumTransportModel>
 kOmegaDyn<BasicMomentumTransportModel>::kOmegaDyn
@@ -83,398 +69,93 @@ kOmegaDyn<BasicMomentumTransportModel>::kOmegaDyn
     const word& type
 )
 :
-    eddyViscosity<RASModel<BasicMomentumTransportModel>>
-    (
-        type,
-        alpha,
-        rho,
-        U,
-        alphaRhoPhi,
-        phi,
-        viscosity
-    ),
-
-    beta_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "beta",
-            this->coeffDict_,
-            0.072
-        )
-    ),
-
-    betaStar_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "betaStar",
-            this->coeffDict_,
-            0.09
-        )
-    ),
-
-    gamma_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "gamma",
-            this->coeffDict_,
-            0.52
-        )
-    ),
-
-    alphaK_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "alphaK",
-            this->coeffDict_,
-            0.5
-        )
-    ),
-
-    alphaOmega_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "alphaOmega",
-            this->coeffDict_,
-            0.5
-        )
-    ),
-
-    dynamicCmuMin_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "dynamicCmuMin",
-            this->coeffDict_,
-            0.0
-        )
-    ),
-
-    dynamicCmuMax_
-    (
-        dimensioned<scalar>::lookupOrAddToDict
-        (
-            "dynamicCmuMax",
-            this->coeffDict_,
-            0.2
-        )
-    ),
-
-    physicalProperties_
-    (
-        IOobject
-        (
-            "physicalProperties",         
-            this->runTime_.constant(),    
-            this->mesh_,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        )
-    ),
-
-    finestra_(
-        this->coeffDict().lookupOrDefault("nPrecedents", 2)
-    ),
-
-    low_omega_
-    (
-        "low_omega",
-        dimensionSet(0, 0, -1, 0, 0),
-        SMALL
-    ),
-
-    low_k_
-    (
-        "low_k",
-        dimensionSet(0, 2, -2, 0, 0),
-        SMALL
-    ),
-
-    low_Z_
-    (
-        "low_Z",
-        dimensionSet(0, 4, -4, 0, 0),
-        SMALL
-    ),
-
-    k_
-    (
-        IOobject
-        (
-            IOobject::groupName("k", alphaRhoPhi.group()),
-            this->runTime_.timeName(),
-            this->mesh_,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        this->mesh_
-    ),
-
-    omega_
-    (
-        IOobject
-        (
-            IOobject::groupName("omega", alphaRhoPhi.group()),
-            this->runTime_.timeName(),
-            this->mesh_,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        this->mesh_
-    ),
-
-    dynamicCmu_
-    (
-        IOobject
-        (
-            "dynamicCmu",
-            this->runTime_.timeName(),
-            this->mesh_,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        ),
-        this->mesh_
-    ),
-
-    S 
-    (
-        IOobject
-        (
-            "S",
-            this->runTime_.timeName(),
-            this->mesh_,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        this->mesh_,
-        dimensionedSymmTensor(dimensionSet(0, 0, -1, 0, 0), Zero)
-    ),
-
-    gU 
-    (
-        IOobject
-        (
-            "gU",
-            this->runTime_.timeName(),
-            this->mesh_,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        this->mesh_,
-        dimensionedTensor(dimensionSet(0, 0, -1, 0, 0), Zero)
-    )
-
+    eddyViscosity<BasicMomentumTransportModel>(type, alpha, rho, U, alphaRhoPhi, phi, viscosity),
+    beta_("beta", this->coeffDict_, 0.072),
+    betaStar_("betaStar", this->coeffDict_, 0.09),
+    gamma_("gamma", this->coeffDict_, 0.52),
+    alphaK_("alphaK", this->coeffDict_, 0.5),
+    alphaOmega_("alphaOmega", this->coeffDict_, 0.5),
+    dynamicCmuMin_("dynamicCmuMin", this->coeffDict_, 0.0),
+    dynamicCmuMax_("dynamicCmuMax", this->coeffDict_, 0.2),
+    physicalProperties_(IOobject("physicalProperties", this->runTime_.constant(), this->mesh_, IOobject::MUST_READ, IOobject::NO_WRITE)),
+    finestra_(this->coeffDict().lookupOrDefault("nPrecedents", 2)),
+    low_omega_("low_omega", dimensionSet(0, 0, -1, 0, 0), SMALL),
+    low_k_("low_k", dimensionSet(0, 2, -2, 0, 0), SMALL),
+    low_Z_("low_Z", dimensionSet(0, 4, -4, 0, 0), SMALL),
+    k_(IOobject(IOobject::groupName("k", alphaRhoPhi.group()), this->runTime_.timeName(), this->mesh_, IOobject::MUST_READ, IOobject::AUTO_WRITE), this->mesh_),
+    omega_(IOobject(IOobject::groupName("omega", alphaRhoPhi.group()), this->runTime_.timeName(), this->mesh_, IOobject::MUST_READ, IOobject::AUTO_WRITE), this->mesh_),
+    dynamicCmu_(IOobject("dynamicCmu", this->runTime_.timeName(), this->mesh_, IOobject::NO_READ, IOobject::AUTO_WRITE), this->mesh_),
+    S(IOobject("S", this->runTime_.timeName(), this->mesh_, IOobject::NO_READ, IOobject::NO_WRITE), this->mesh_, dimensionedSymmTensor(dimensionSet(0, 0, -1, 0, 0), Zero)),
+    gU(IOobject("gU", this->runTime_.timeName(), this->mesh_, IOobject::NO_READ, IOobject::NO_WRITE), this->mesh_, dimensionedTensor(dimensionSet(0, 0, -1, 0, 0), Zero))
 {
-    Info << "kOmegaDyn constructor called!" << nl;
-
-////////////////////////////////    PtrLists    ////////////////////////////////////
+    const int nPrev = finestra_ - 1;
+    kPrev_.setSize(nPrev);
+    omegaPrev_.setSize(nPrev);
+    UPrev_.setSize(nPrev);
+    SPrev_.setSize(nPrev);
     
-    kPrev_.setSize(finestra_ - 1);
-    omegaPrev_.setSize(finestra_ - 1);
-    UPrev_.setSize(finestra_ - 1);
-    kprint_.setSize(finestra_ - 1);
-    omegaprint_.setSize(finestra_ - 1);
-    Uprint_.setSize(finestra_ - 1);
-    gUprint_.setSize(finestra_ - 1);
+    kprint_.setSize(nPrev);
+    omegaprint_.setSize(nPrev);
+    Uprint_.setSize(nPrev);
+    gUprint_.setSize(nPrev);
 
-    for (int i = 0; i < finestra_ - 1; ++i)
+    for (int i = 0; i < nPrev; ++i)
     {
-        kPrev_.set
-        (
-            i,
-            new volScalarField
-            (
-                IOobject
-                (
-                    "kPrev_" + name(i),
-                    this->runTime_.timeName(),
-                    this->mesh_,
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                this->mesh_,
-                dimensionedScalar(dimensionSet(0,2,-2,0,0), 0)
-            )
-        );
-
-        omegaPrev_.set
-        (
-            i,
-            new volScalarField
-            (
-                IOobject
-                (
-                    "omegaPrev_" + name(i),
-                    this->runTime_.timeName(),
-                    this->mesh_,
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                this->mesh_,
-                dimensionedScalar(dimensionSet(0,0,-1,0,0), SMALL)
-            )
-        );
-
-        UPrev_.set
-        (
-            i,
-            new volVectorField
-            (
-                IOobject
-                (
-                    "UPrev_" + name(i),
-                    this->runTime_.timeName(),
-                    this->mesh_,
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                this->mesh_,
-                dimensionedVector(dimensionSet(0,1,-1,0,0), Zero)
-            )
-        );
-        kprint_.set
-        (
-            i,
-            new volScalarField
-            (
-                IOobject
-                (
-                    "kprint_" + name(i+1),
-                    this->runTime_.timeName(),
-                    this->mesh_,
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                this->mesh_,
-                dimensionedScalar(dimensionSet(0,2,-2,0,0), 0)
-            )
-        );
-
-        omegaprint_.set
-        (
-            i,
-            new volScalarField
-            (
-                IOobject
-                (
-                    "omegaprint_" + name(i+1),
-                    this->runTime_.timeName(),
-                    this->mesh_,
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                this->mesh_,
-                dimensionedScalar(dimensionSet(0,0,-1,0,0), 1e-12)
-            )
-        );
-
-        Uprint_.set
-        (
-            i,
-            new volVectorField
-            (
-                IOobject
-                (
-                    "Uprint_" + name(i+1),
-                    this->runTime_.timeName(),
-                    this->mesh_,
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                this->mesh_,
-                dimensionedVector(dimensionSet(0,1,-1,0,0), Zero)
-            )
-        );
-
-        gUprint_.set
-        (
-            i,
-            new volTensorField
-            (
-                IOobject
-                (
-                    "gUprint_" + name(i+1),
-                    this->runTime_.timeName(),
-                    this->mesh_,
-                    IOobject::NO_READ,
-                    IOobject::NO_WRITE
-                ),
-                this->mesh_,
-                dimensionedTensor(dimensionSet(0,0,-1,0,0), Zero)
-            )
-        );
+        kPrev_.set(i, new volScalarField(IOobject("kPrev_"+name(i), this->runTime_.timeName(), this->mesh_), this->mesh_, dimensionedScalar(dimViscosity, 0)));
+        omegaPrev_.set(i, new volScalarField(IOobject("omegaPrev_"+name(i), this->runTime_.timeName(), this->mesh_), this->mesh_, dimensionedScalar(low_omega_.dimensions(), SMALL)));
+        UPrev_.set(i, new volVectorField(IOobject("UPrev_"+name(i), this->runTime_.timeName(), this->mesh_), this->mesh_, dimensionedVector(dimVelocity, Zero)));
+        SPrev_.set(i, new volSymmTensorField(IOobject("SPrev_"+name(i), this->runTime_.timeName(), this->mesh_), this->mesh_, dimensionedSymmTensor(low_omega_.dimensions(), Zero)));
+        
+        kprint_.set(i, new volScalarField(IOobject("kprint_"+name(i+1), this->runTime_.timeName(), this->mesh_), this->mesh_, dimensionedScalar(dimViscosity, 0)));
+        omegaprint_.set(i, new volScalarField(IOobject("omegaprint_"+name(i+1), this->runTime_.timeName(), this->mesh_), this->mesh_, dimensionedScalar(low_omega_.dimensions(), 1e-12)));
+        Uprint_.set(i, new volVectorField(IOobject("Uprint_"+name(i+1), this->runTime_.timeName(), this->mesh_), this->mesh_, dimensionedVector(dimVelocity, Zero)));
+        gUprint_.set(i, new volTensorField(IOobject("gUprint_"+name(i+1), this->runTime_.timeName(), this->mesh_), this->mesh_, dimensionedTensor(low_omega_.dimensions(), Zero)));
     }
 
     bound(k_, this->kMin_);
     bound(omega_, this->omegaMin_);
-
-    if (type == typeName)
-    {
-        this->printCoeffs(type);
-    }
 }
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class BasicMomentumTransportModel>
 bool kOmegaDyn<BasicMomentumTransportModel>::read()
 {
-    if (eddyViscosity<RASModel<BasicMomentumTransportModel>>::read())
+    if (eddyViscosity<BasicMomentumTransportModel>::read())
     {
         beta_.readIfPresent(this->coeffDict());
         gamma_.readIfPresent(this->coeffDict());
         alphaK_.readIfPresent(this->coeffDict());
         alphaOmega_.readIfPresent(this->coeffDict());
-
         dynamicCmuMin_.readIfPresent(this->coeffDict());
         dynamicCmuMax_.readIfPresent(this->coeffDict());
-
         return true;
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 template<class BasicMomentumTransportModel>
 void kOmegaDyn<BasicMomentumTransportModel>::correct()
 {
-    if (!this->turbulence_)
-    {
-        return;
-    }
+    if (!this->turbulence_) return;
 
-    // Local Ref. 
     const alphaField& alpha = this->alpha_;
     const rhoField& rho = this->rho_;
     const surfaceScalarField& alphaRhoPhi = this->alphaRhoPhi_;
     const volVectorField& U = this->U_;
-
     volScalarField& nut = this->nut_;
 
     const Foam::fvModels& fvModels(Foam::fvModels::New(this->mesh_));
-    const Foam::fvConstraints& fvConstraints
-    (
-        Foam::fvConstraints::New(this->mesh_)
-    );
+    const Foam::fvConstraints& fvConstraints(Foam::fvConstraints::New(this->mesh_));
 
-    eddyViscosity<RASModel<BasicMomentumTransportModel>>::correct();
+    eddyViscosity<BasicMomentumTransportModel>::correct();
 
     volScalarField divU(fvc::div(fvc::absolute(this->phi(), U)));
-
     tmp<volTensorField> tgradU = fvc::grad(U);
     volScalarField G(this->GName(), nut*(tgradU() && dev(twoSymm(tgradU()))));
 
-    // Update omega and G at walls
     omega_.boundaryFieldRef().updateCoeffs();   
 
-    // Specific dissipation equation
-    tmp<fvScalarMatrix> omegaEqn(
+    tmp<fvScalarMatrix> omegaEqn
+    (
         fvm::ddt(alpha, rho, omega_)
       + fvm::div(alphaRhoPhi, omega_)
       - fvm::laplacian(alpha*rho*DomegaEff(), omega_)
@@ -488,18 +169,11 @@ void kOmegaDyn<BasicMomentumTransportModel>::correct()
 
     omegaEqn.ref().relax();
     fvConstraints.constrain(omegaEqn.ref());
-    omegaEqn.ref().boundaryManipulate(omega_.boundaryFieldRef());
     solve(omegaEqn);
-    fvConstraints.constrain(omega_);
     bound(omega_, this->omegaMin_);
 
-    Info << "min(omega_): " << gMin(omega_) 
-     << "  max(omega_): " << gMax(omega_) << nl;
-    Info << "min(k_): " << gMin(k_)
-     << "  max(k_): " << gMax(k_) << nl;
-
-    // Turbulent kinetic energy equation
-    tmp<fvScalarMatrix> kEqn(
+    tmp<fvScalarMatrix> kEqn
+    (
         fvm::ddt(alpha, rho, k_)
       + fvm::div(alphaRhoPhi, k_)
       - fvm::laplacian(alpha*rho*DkEff(), k_)
@@ -514,152 +188,78 @@ void kOmegaDyn<BasicMomentumTransportModel>::correct()
     kEqn.ref().relax();
     fvConstraints.constrain(kEqn.ref());
     solve(kEqn);
-    fvConstraints.constrain(k_);
     bound(k_, this->kMin_);
 
-//////////////////////////////////  Dynamic procedure  ////////////////////////////////////
-
-    const volTensorField& gradU = tgradU();
-
-    S = symm(gradU);
-    
-    gU = gradU;
+    // Procedura Dinamica Ottimizzata
+    S = symm(tgradU());
+    gU = tgradU();
+    tgradU.clear();
 
     volSymmTensorField sum_uu = symm(U * U);
     volVectorField sum_u = U;
-
-    volSymmTensorField kES_mean = (2/betaStar_) * (k_/(omega_ + low_omega_)) * S;
+    volSymmTensorField kES_mean = (2.0/betaStar_) * (k_/(omega_ + low_omega_)) * S;
     volSymmTensorField sum_S = S;
-
     volScalarField k_mean = k_;
     volScalarField omega_mean = omega_;
 
-    volScalarField squaredS_mean = sqr(tr(S)) - sqr(tr(S)); // init placeholder (si potrebbe scrivere meglio)
-    
-    forAll(S, cellI)
-    {
-          squaredS_mean[cellI] =
-          sqr(S[cellI].xx())
-        + sqr(S[cellI].yy())
-        + sqr(S[cellI].zz());
-    }
-
-    tgradU.clear();
+    // Calcolo diagonali S^2 vettorializzato
+    volScalarField squaredS_mean = sqr(S.component(symmTensor::XX)) 
+                                 + sqr(S.component(symmTensor::YY)) 
+                                 + sqr(S.component(symmTensor::ZZ));
 
     for (int i = 0; i < finestra_ - 1; ++i)
     {
         sum_uu += symm(UPrev_[i] * UPrev_[i]);
         sum_u += UPrev_[i];
-
-        volTensorField gradUPrev_ = fvc::grad(UPrev_[i]);
-        volSymmTensorField SPrev_ = symm(gradUPrev_);
-
-        kES_mean += (2/betaStar_)*(kPrev_[i]/(omegaPrev_[i] + low_omega_)) * SPrev_;
-        sum_S += SPrev_;
-
+        kES_mean += (2.0/betaStar_)*(kPrev_[i]/(omegaPrev_[i] + low_omega_)) * SPrev_[i];
+        sum_S += SPrev_[i];
         k_mean += kPrev_[i];
         omega_mean += omegaPrev_[i];
-
-        forAll(SPrev_, cellI)
-        {
-          squaredS_mean[cellI] +=
-          sqr(SPrev_[cellI].xx())
-		  + sqr(SPrev_[cellI].yy())
-		  + sqr(SPrev_[cellI].zz());
-        }
+        
+        squaredS_mean += sqr(SPrev_[i].component(symmTensor::XX))
+                       + sqr(SPrev_[i].component(symmTensor::YY))
+                       + sqr(SPrev_[i].component(symmTensor::ZZ));
     }
 
-    sum_u = sum_u / finestra_;
-    volSymmTensorField uu_average = sum_uu / finestra_;
-    volSymmTensorField u_average_u_average = symm((sum_u) * (sum_u));
-
-    volSymmTensorField L = uu_average - u_average_u_average;
-
-    kES_mean = kES_mean / finestra_;
-    volSymmTensorField S_average = sum_S / finestra_;
-
-    k_mean = k_mean / finestra_;
-    volScalarField k_mean_T = k_mean + 0.5*(tr(uu_average) - (sum_u & sum_u)); 
-
-    omega_mean = omega_mean / finestra_;
-
-    squaredS_mean = squaredS_mean / finestra_;
-
-    volScalarField SSquared_mean = sqr(tr(S_average)) - sqr(tr(S_average));
+    sum_u /= finestra_;
+    volSymmTensorField L = (sum_uu/finestra_) - symm(sum_u * sum_u);
+    kES_mean /= finestra_;
+    volSymmTensorField S_avg = sum_S / finestra_;
     
-    forAll(S_average, cellI)
-    {
-        SSquared_mean[cellI] +=
-            sqr(S_average[cellI].xx())
-          + sqr(S_average[cellI].yy())
-          + sqr(S_average[cellI].zz());
-    }
+    volScalarField k_mean_T = (k_mean/finestra_) + 0.5*(tr(sum_uu/finestra_) - (sum_u & sum_u)); 
+    omega_mean /= finestra_;
+    squaredS_mean /= finestra_;
 
-    omega_mean = (1 / (k_mean_T + low_k_)) * ((k_mean * omega_mean) + ((this->nu()) / betaStar_) * (squaredS_mean - SSquared_mean));
+    volScalarField SSquared_mean = sqr(S_avg.component(symmTensor::XX))
+                                 + sqr(S_avg.component(symmTensor::YY))
+                                 + sqr(S_avg.component(symmTensor::ZZ));
 
-    volSymmTensorField Z = kES_mean - (2/betaStar_) * (k_mean_T / (omega_mean + low_omega_)) * S_average;
+    omega_mean = (1.0 / (k_mean_T + low_k_)) * ((k_mean/finestra_ * omega_mean) + (this->nu() / betaStar_) * (squaredS_mean - SSquared_mean));
+    volSymmTensorField Z = kES_mean - (2.0/betaStar_) * (k_mean_T / (omega_mean + low_omega_)) * S_avg;
 
     dynamicCmu_ = (Z && L) / ((Z && Z) + low_Z_);
+    
+    if (this->runTime_.timeIndex() < 10) dynamicCmu_ = 0.09;
+    
+    // Clipping vettorializzato
+    dynamicCmu_ = min(max(dynamicCmu_, dynamicCmuMin_.value()), dynamicCmuMax_.value());
 
-    //Debug 
-    Info << "max value of dynamicCmu: " << max(dynamicCmu_) << nl;
-	Info << "min value of dynamicCmu: " << min(dynamicCmu_) << nl;
-
-    if (this->runTime_.timeIndex() < 10)
-    {
-        dynamicCmu_ = 0.09;
-    }
-
-    // Clipping dynamicCmu_ using user-settable limits
-    const scalar dynCmuMin = dynamicCmuMin_.value();
-    const scalar dynCmuMax = dynamicCmuMax_.value();
-
-    forAll(dynamicCmu_, cellI)
-    {
-        if (dynamicCmu_[cellI] > dynCmuMax)
-        {
-            dynamicCmu_[cellI] = dynCmuMax;
-        }
-        else if (dynamicCmu_[cellI] < dynCmuMin)
-        {
-            dynamicCmu_[cellI] = dynCmuMin;
-        }
-    }
-
-    // Update stored fields (previous-step)
-
-    for (int i = 0; i <= finestra_ - 2; ++i)
-    {
-        Uprint_[i] = UPrev_[i];
-        kprint_[i] = kPrev_[i];
-        omegaprint_[i] = omegaPrev_[i];
-        gUprint_[i] = fvc::grad(UPrev_[i]);
-    }
-
-    // shift history and insert current values at the end
-
+    // Aggiornamento Cronologia
     for (int i = 0; i < finestra_ - 2; ++i)
     {
-        bound(kPrev_[i], this->kMin_);
-        bound(omegaPrev_[i], this->omegaMin_);
-
         UPrev_[i] = UPrev_[i+1];
         kPrev_[i] = kPrev_[i+1];
         omegaPrev_[i] = omegaPrev_[i+1];
+        SPrev_[i] = SPrev_[i+1];
     }
 
     UPrev_[finestra_ - 2] = this->U_;
     kPrev_[finestra_ - 2] = this->k_;
     omegaPrev_[finestra_ - 2] = this->omega_;
+    SPrev_[finestra_ - 2] = S;
 
     correctNut();
-
-    Info << "Time = " << this->runTime_.timeName() << nl << endl;
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 } // End namespace RASModels
 } // End namespace Foam
-
-// ************************************************************************* //
