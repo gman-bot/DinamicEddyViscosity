@@ -609,7 +609,6 @@ void kOmegaDynamic<BasicMomentumTransportModel>::correct()
         sum_uu += symm(UPrev_[i] * UPrev_[i]);
         sum_u += UPrev_[i];
 
-        // CORREZIONE: Legge la deformazione storicizzata direttamente dalla RAM
         const volSymmTensorField& S_i = SPrev_[i];
 
         kES_mean += (2/betaStar_)*(kPrev_[i]/(omegaPrev_[i] + low_omega_)) * S_i;
@@ -656,22 +655,22 @@ void kOmegaDynamic<BasicMomentumTransportModel>::correct()
         dynamicCmu_ = dimensionedScalar("cmuStart", dimless, 0.09);
     }
 
-    // Global and type-safe clipping of dynamicCmu_ over internal field and boundaries
+    // Clipping
     dynamicCmu_ = max(dynamicCmuMin_, min(dynamicCmu_, dynamicCmuMax_));
 
-    // Update stored fields for printing (save the previous iteration before overwriting it)
+    // Update stored fields
     Uprint_[ringIndex_] = UPrev_[ringIndex_];
     kprint_[ringIndex_] = kPrev_[ringIndex_];
     omegaprint_[ringIndex_] = omegaPrev_[ringIndex_];
     gUprint_[ringIndex_] = fvc::grad(UPrev_[ringIndex_]);
 
-    // Insert current values, replacing the oldest ones in the ring buffer
+    // Insert new values
     UPrev_[ringIndex_] = this->U_;
     kPrev_[ringIndex_] = this->k_;
     omegaPrev_[ringIndex_] = this->omega_;
     SPrev_[ringIndex_] = S;
 
-    // Advance the circular index
+    // Advance index
     ringIndex_ = (ringIndex_ + 1) % (window_ - 1);
 
     correctNut();
