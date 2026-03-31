@@ -32,6 +32,10 @@ Description
         Cimarelli, A., Marras, N., Niceno, B., & Tessier Urrecha, Y. (2025).
         Unifying formalism and closures for coarse-grained approaches to turbulence.
         arXiv preprint arXiv:2512.19274.
+
+        Tessier Urrecha, Y., Manzi, G., Cancellotti, F., & Cimarelli, A. (2026).
+        Development of dynamic RANS closures for coarse-grained approaches to 
+        turbulence. Under review.
     \endverbatim
     
     The default model coefficients are

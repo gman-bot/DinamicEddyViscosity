@@ -35,52 +35,66 @@ The dynamic coefficient c_mu (bounded 0.0 <= c_mu <= 0.2) is evaluated using
 the Germano-like procedure:
     c_mu = (M_ij * L_ij) / (M_ij * M_ij)
 
-Where:
-    L_ij = <<u_i>_t * <u_j>_t>_T - <<u_i>_t>_T * <<u_j>_t>_T
-    M_ij = 2 * <(k_t / (beta* * omega_t)) * <S_ij>_t>_T 
-           - 2 * (k_T_t / (beta* * omega_T_t)) * <<S_ij>_t>_T
-
 1.3 Zero-Decay Modification
 The normalized dynamic coefficient c_mu* is used in the destruction terms:
     c_mu* = c_mu / c_mu_0 (where c_mu_0 = 0.09)
 
-If "Zero-Decay" is set to "no", c_mu* defaults to 1.0.
-
 --------------------------------------------------------------------------------
-2. OPENFOAM CONFIGURATION (constant/momentumTransport)
+2. OPENFOAM CONFIGURATION
 --------------------------------------------------------------------------------
 
+2.1 constant/momentumTransport
+------------------------------
 simulationType RAS;
 RAS
 {
     RASModel        kOmegaDynamic;
     turbulence      on;
-    printCoeffs     on; 
     kOmegaDynamicCoeffs
     {
-        // Standard k-omega parameters
         betaStar        0.09;
         beta            0.075;       
         gamma           0.55;
         alphaK          0.5;        
         alphaOmega      0.5;        
-
-        // Dynamic procedure parameters
-        Cmu_0           0.09;       // Base reference value
-        dynamicCmuMin   0.0;        // Lower clipping limit 
-        dynamicCmuMax   0.2;        // Upper clipping limit 
-
-        // Averaging and stabilization
-        nWindow         2;          // Buffer size for temporal averaging
-        nStart          10;         // Time steps before dynamic procedure
-        
-        // Model variant switch
-        Zero-Decay      yes;        // Activate Zero-Decay modification (or no)
+        Cmu_0           0.09;       
+        dynamicCmuMin   0.0;        
+        dynamicCmuMax   0.2;        
+        nWindow         2;          
+        nStart          10;         
+        Zero-Decay      yes;        
     }
 }
 
+2.2 0/dynamicCmu (Initial Conditions)
+-------------------------------------
+The dynamic coefficient field must be initialized in the 0/ directory. 
+An exmaple is reported in the following.
+
+dimensions      [0 0 0 0 0 0 0];
+internalField   uniform 0.09;
+boundaryField
+{
+    WALL
+    {
+        type            fixedValue;
+        value           uniform 0;
+    }
+    IN
+    {
+        type            fixedValue;
+        value           uniform 0; 
+    }
+    OUT
+    {
+        type            zeroGradient;
+    }
+    
+    ...
+}
+
 --------------------------------------------------------------------------------
-3. PARAMETERS  
+3. PARAMETER SUMMARY
 --------------------------------------------------------------------------------
 
 | Parameter    | Description                                      | Default |
